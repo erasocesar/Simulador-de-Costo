@@ -79,8 +79,8 @@ export default function ServiciosCombinadosCalculadora() {
     try {
       setCargando(true)
       setError(null)
-
-      const url = "https://services3.arcgis.com/ZiJ1tTEqxY3r6Vsd/arcgis/rest/services/Catalogo_de_Servicios/FeatureServer/2/query?where=1%3D1&outFields=*&f=json"
+      // URL actualizada a GeoJSON en GitHub
+      const url = "https://raw.githubusercontent.com/erasocesar/GeoJSONs/refs/heads/main/Catalogo_de_Servicios.geojson"
       const response = await fetch(url, { method: "GET", headers: { Accept: "application/json" }, cache: "no-cache" })
       if (!response.ok) {
         throw new Error(`Error en la respuesta: ${response.status} ${response.statusText}`)
@@ -89,10 +89,11 @@ export default function ServiciosCombinadosCalculadora() {
       if (!data.features || !Array.isArray(data.features)) {
         throw new Error("No se encontraron features en la respuesta")
       }
-
+  
       // Convertimos features -> array de Servicios
       const serviciosFormateados = data.features.map((feature: any, index: number) => {
-        const attrs = feature.attributes || {}
+        // Usamos properties en lugar de attributes
+        const attrs = feature.properties || {}
         return {
           id: index + 1,
           Nro: attrs.Nro || `SRV${String(index + 1).padStart(3, "0")}`,
@@ -113,8 +114,8 @@ export default function ServiciosCombinadosCalculadora() {
           seleccionado: selectedServiceIds.includes(index + 1),
         }
       })
-
-      // Filtramos "Uso Interno IsaGIS" si no queremos mostrarlo
+  
+      // Filtrar "Uso Interno IsaGIS" si no se desea mostrar
       const filtrados = serviciosFormateados.filter(
         (s) => s.Area_IsaGIS_Technologies !== "Uso Interno IsaGIS"
       )
@@ -125,7 +126,7 @@ export default function ServiciosCombinadosCalculadora() {
     } finally {
       setCargando(false)
     }
-  }
+  }  
 
   //
   // 2. Cargar Costos Base (ArcGIS Online)
@@ -133,7 +134,8 @@ export default function ServiciosCombinadosCalculadora() {
   useEffect(() => {
     const cargarCostosBase = async () => {
       try {
-        const url = "https://services3.arcgis.com/ZiJ1tTEqxY3r6Vsd/arcgis/rest/services/Tabla_Costos_Base/FeatureServer/0/query?where=1%3D1&outFields=*&f=json"
+        // URL actualizada a GeoJSON en GitHub
+        const url = "https://raw.githubusercontent.com/erasocesar/GeoJSONs/refs/heads/main/Tabla_Costos_Base.geojson"
         const response = await fetch(url, { method: "GET", headers: { Accept: "application/json" }, cache: "no-cache" })
         if (!response.ok) {
           throw new Error(`Error en la respuesta Costos Base: ${response.status} ${response.statusText}`)
@@ -143,7 +145,8 @@ export default function ServiciosCombinadosCalculadora() {
           throw new Error("No se encontraron features en la respuesta de Costos Base")
         }
         const costosFormateados = data.features.map((feature: any, index: number) => {
-          const attrs = feature.attributes || {}
+          // Usamos properties en lugar de attributes
+          const attrs = feature.properties || {}
           return {
             id: index + 1,
             Tipo_de_Servicio: attrs.Tipo_de_Servicio || "",
@@ -155,7 +158,7 @@ export default function ServiciosCombinadosCalculadora() {
       } catch (error) {
         console.error("Error al cargar Costos Base:", error)
         setError(error instanceof Error ? error.message : "Error desconocido al cargar Costos Base")
-        // En caso de error, valores por defecto
+        // En caso de error, valores por defecto (puedes mantener estos si los necesitas)
         const costosBaseDefecto = [
           { id: 1,  Tipo_de_Servicio: "Basico",     Modalidad_de_Contrato: "Full 1", Costos_Base: 400000 },
           { id: 2,  Tipo_de_Servicio: "Intermedio", Modalidad_de_Contrato: "Full 1", Costos_Base: 2500000 },
@@ -177,14 +180,13 @@ export default function ServiciosCombinadosCalculadora() {
       }
     }
     cargarCostosBase()
-  }, [])
+  }, [])  
 
   //
-  // 3. Cargar Catálogo de Servicios al iniciar
-  //
-  useEffect(() => {
-    cargarDatos()
-  }, [selectedServiceIds])
+// 3. Cargar Catálogo de Servicios al iniciar
+useEffect(() => {
+  cargarDatos()
+}, []) // <-- SIN [selectedServiceIds]
 
   //
   // 4. Cargar combos (Departamento, Grupo) desde un GeoJSON
@@ -610,8 +612,8 @@ export default function ServiciosCombinadosCalculadora() {
           <div className="bg-gray-800 p-3 rounded-lg flex items-center justify-between">
             <span className="text-sm text-gray-400">Servicios Seleccionados</span>
             <span className="text-lg font-semibold text-[#00B2FF]">
-              {servicios.filter((s) => s.seleccionado).length}
-            </span>
+  {selectedServiceIds.length}
+</span>
           </div>
           <div className="bg-gray-800 p-3 rounded-lg flex items-center justify-between">
             <span className="text-sm text-gray-400">Servicios Disponibles</span>
