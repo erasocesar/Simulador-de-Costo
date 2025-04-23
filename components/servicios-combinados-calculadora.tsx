@@ -106,7 +106,7 @@ export default function ServiciosCombinadosCalculadora() {
           Intermedios: typeof attrs.Intermedios === "number" ? attrs.Intermedios : 0,
           Avanzados: typeof attrs.Avanzados === "number" ? attrs.Avanzados : 0,
           Tiempos_de_entrega: attrs.Tiempos_de_entrega || "N/A",
-          Tiempo_dias_habiles: typeof attrs.Tiempos_dias_habiles === "number" ? attrs.Tiempos_dias_habiles : 0,
+          Tiempo_dias_habiles: parseFloat(String(attrs.Tiempo__Dias_habiles_ || "0").replace(",", ".")),
           Detalles_Costo_Base: attrs.Detalles_Costo_Base || "Sin detalles",
           Notas_Adicionales: attrs.Notas_Adicionales || "Sin notas adicionales",
           Descripción_Técnica_del_Servici: attrs["Descripción_Técnica_del_Servici"] || "",
