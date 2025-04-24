@@ -27,7 +27,7 @@ type Servicio = {
   Tiempo_dias_habiles: number
   Detalles_Costo_Base: string
   Notas_Adicionales: string
-  Descripción_Técnica_del_Servici: string
+  Descripción_Técnica_del_Servicio: string
   costoBase?: number
   seleccionado: boolean
 }
@@ -109,7 +109,7 @@ export default function ServiciosCombinadosCalculadora() {
           Tiempo_dias_habiles: parseFloat(String(attrs.Tiempo__Dias_habiles_ || "0").replace(",", ".")),
           Detalles_Costo_Base: attrs.Detalles_Costo_Base || "Sin detalles",
           Notas_Adicionales: attrs.Notas_Adicionales || "Sin notas adicionales",
-          Descripción_Técnica_del_Servici: attrs["Descripción_Técnica_del_Servici"] || "",
+          Descripción_Técnica_del_Servicio: attrs["Descripción_Técnica_del_Servicio"] || "",
           costoBase: typeof attrs.costoBase === "number" ? attrs.costoBase : 0,
           seleccionado: selectedServiceIds.includes(index + 1),
         }
@@ -787,7 +787,7 @@ useEffect(() => {
                     <div>
                       <h4 className="text-sm text-gray-400">Descripción Técnica del Servicio</h4>
                       <p className="text-white text-sm break-words">
-                        {serviciosSeleccionados[indiceDetalleActual]?.Descripción_Técnica_del_Servici}
+                        {serviciosSeleccionados[indiceDetalleActual]?.Descripción_Técnica_del_Servicio}
                       </p>
                     </div>
                     <div>
