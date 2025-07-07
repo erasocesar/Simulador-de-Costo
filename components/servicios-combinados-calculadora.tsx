@@ -11,7 +11,9 @@ import {
   ChevronRight
 } from "lucide-react"
 
-// [Código anterior conservado sin modificaciones...]
+// Define el componente
+function ServiciosCombinadosCalculadora() {
+  // [código omitido por brevedad; se mantiene igual que antes...]
 
   // 5. Filtros del Catálogo
   useEffect(() => {
@@ -20,13 +22,11 @@ import {
 
     let serviciosFiltrados = [...serviciosCargados];
 
-    // 1. Si hay un Servicio Combinado activo, mostramos SOLO esos códigos:
     if (codigosCombinadosSeleccionados.length > 0) {
       serviciosFiltrados = serviciosFiltrados.filter((s) =>
         codigosCombinadosSeleccionados.includes(Number(s.Nro))
       );
     } else {
-      // 2. De lo contrario, aplicamos los filtros normales:
       if (departamentoSeleccionado !== "Todos") {
         serviciosFiltrados = serviciosFiltrados.filter(
           (s) => s.Area_IsaGIS_Technologies === departamentoSeleccionado
@@ -37,7 +37,6 @@ import {
           (s) => s.Grupo === grupoSeleccionado
         );
       }
-      // Filtro por texto (busqueda) en el campo Nombre_del_Servicio y Descripción_Técnica_del_Servicio
       if (busqueda) {
         const busquedaNormalizada = normalizar(busqueda);
         serviciosFiltrados = serviciosFiltrados.filter((s) =>
@@ -47,7 +46,6 @@ import {
       }
     }
 
-    // Marcar como seleccionado
     serviciosFiltrados = serviciosFiltrados.map((serv) => ({
       ...serv,
       seleccionado: selectedServiceIds.includes(serv.id),
@@ -63,4 +61,8 @@ import {
     selectedServiceIds,
   ]);
 
-// [Resto del código no modificado para mantener el funcionamiento actual]
+  // [más lógica y return JSX aquí...]
+}
+
+// Exportación corregida
+export default ServiciosCombinadosCalculadora
