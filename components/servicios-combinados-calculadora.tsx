@@ -130,7 +130,36 @@ export default function ServiciosCombinadosCalculadora() {
   }
 
   //--------------------------------------------------------------------
-  // 2. Cargar combos Departamento / Grupo
+  // 2. Cargar Costos Base
+  //--------------------------------------------------------------------
+  useEffect(() => {
+    const cargarCostos = async () => {
+      try {
+        const url =
+          "https://raw.githubusercontent.com/erasocesar/GeoJSONs/refs/heads/main/Tabla_Costos_Base.geojson"
+        const r = await fetch(url, { headers: { Accept: "application/json" }, cache: "no-cache" })
+        if (!r.ok) throw new Error("Error costos base")
+        const d = await r.json()
+        if (!Array.isArray(d.features)) throw new Error("Sin features costos base")
+        const arr: CostoBase[] = d.features.map((f: any, i: number) => {
+          const p = f.properties || {}
+          return {
+            id: i + 1,
+            Tipo_de_Servicio: p.Tipo_de_Servicio || "",
+            Modalidad_de_Contrato: p.Modalidad_de_Contrato || "",
+            Costos_Base: Number(p.Costos_Base) || 0,
+          }
+        })
+        setCostosBase(arr)
+      } catch (e) {
+        console.error(e)
+      }
+    }
+    cargarCostos()
+  }, [])
+
+  //--------------------------------------------------------------------
+  // 3. Cargar combos Departamento / Grupo
   //--------------------------------------------------------------------
   useEffect(() => {
     fetch(
@@ -147,12 +176,12 @@ export default function ServiciosCombinadosCalculadora() {
   }, [])
 
   //--------------------------------------------------------------------
-  // 3. Cargar Catálogo al iniciar
+  // 4. Cargar Catálogo al iniciar
   //--------------------------------------------------------------------
   useEffect(cargarDatos, [])
 
   //--------------------------------------------------------------------
-  // 4. Filtro principal (acentos + descripción técnica)
+  // 5. Filtro principal (acentos + descripción técnica)
   //--------------------------------------------------------------------
   useEffect(() => {
     let filtrados = [...serviciosCargados]
@@ -188,7 +217,7 @@ export default function ServiciosCombinadosCalculadora() {
   ])
 
   //--------------------------------------------------------------------
-  // 5. Calcular tiempo y costos (idéntico al original)
+  // 6. Calcular tiempo y costos (idéntico al original, solo reorganizado)
   //--------------------------------------------------------------------
   useEffect(() => {
     const seleccionados = serviciosCargados.filter((s) => selectedServiceIds.includes(s.id))
@@ -214,10 +243,229 @@ export default function ServiciosCombinadosCalculadora() {
     const totalAvanzados = seleccionados.reduce((sum, s) => sum + (Number(s.Avanzados) || 0), 0)
 
     const getCostoBase = (tipo: string, modalidad: string): number => {
-      const c = costosBase.find((cb) => cb.Tipo_de_Servicio === tipo && cb.Modalidad_de_Contrato === modalidad)
+      const c = costosBase.find(
+        (cb) => cb.Tipo_de_Servicio === tipo && cb.Modalidad_de_Contrato === modalidad
+      )
       return c ? c.Costos_Base : 0
     }
 
-    setCostosTotalesFull1(
-      totalBasicos * getCostoBase("Basico", "Full 1") +
-        totalIntermedios * getCostoBase("Intermedio", "Full
+    const calcTotal = (modalidad: string) =>
+      totalBasicos * getCostoBase("Basico", modalidad) +
+      totalIntermedios * getCostoBase("Intermedio", modalidad) +
+      totalAvanzados * getCostoBase("Avanzado", modalidad)
+
+    setCostosTotalesFull1(calcTotal("Full 1"))
+    setCostosTotalesFull2(calcTotal("Full 2"))
+    setCostosTotalesPromo1(calcTotal("Promo 1"))
+    setCostosTotalesPromo2(calcTotal("Promo 2"))
+    setCostosTotalesPromo3(calcTotal("Promo 3"))
+
+    setIndiceDetalleActual(0)
+  }, [servicios, costosBase])
+
+  //--------------------------------------------------------------------
+  // 7. Resto de funciones auxiliares (toggle, limpiar, etc.)
+  //--------------------------------------------------------------------
+  const limpiarSeleccion = () => {
+    setSelectedServiceIds([])
+    setBusqueda("")
+    setFiltroCombinado("")
+    setDepartamentoSeleccionado("Todos")
+    setGrupoSeleccionado("Todos")
+    setCodigosCombinadosSeleccionados([])
+    setServicios(serviciosCargados)
+  }
+
+  const toggleServicio = (id: number) => {
+    setSelectedServiceIds((prev) =>
+      prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]
+    )
+  }
+
+  //--------------------------------------------------------------------
+  // 8. Cargar Servicios Combinados (igual que antes)
+  //--------------------------------------------------------------------
+  useEffect(() => {
+    fetch(
+      "https://raw.githubusercontent.com/erasocesar/GeoJSONs/refs/heads/main/Servicios_Combinados.geojson"
+    )
+      .then((r) => r.json())
+      .then((d) => {
+        const grouped: { [key: string]: number[] } = {}
+        d.features.forEach((f: any) => {
+          const n = f.properties.Nombre_Servicio_Combinado
+          const c = Number(f.properties.Codigo_Servicio_SIG)
+          if (!grouped[n]) grouped[n] = []
+          grouped[n].push(c)
+        })
+        setMapCombinados(grouped)
+      })
+      .catch(console.error)
+  }, [])
+
+  const filtrarCatalogoPorCombinado = (nombre: string) => {
+    const cods = mapCombinados[nombre] || []
+    if (!cods.length) return
+    const matches = serviciosCargados.filter((s) => cods.includes(Number(s.Nro)))
+    setSelectedServiceIds((prev) => Array.from(new Set([...prev, ...matches.map((s) => s.id)])))
+    setCodigosCombinadosSeleccionados(cods)
+    setFiltroCombinado(nombre)
+  }
+
+  //--------------------------------------------------------------------
+  // 9. Render
+  //--------------------------------------------------------------------
+  const serviciosSeleccionados = serviciosCargados.filter((s) => selectedServiceIds.includes(s.id))
+
+  const formatearMoneda = (v: number) =>
+    v.toLocaleString("es-CO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+
+  return (
+    <div className="bg-gray-900 rounded-lg shadow-lg border border-gray-800 overflow-hidden">
+      <div className="p-6">
+        {/* cabecera */}
+        <div className="mb-8 text-center">
+          <h3 className="text-xl font-semibold text-[#e0b400] mb-4">Simulador de Costos</h3>
+          <p className="text-gray-300">
+            Selecciona los servicios que necesitas y obtén una estimación de costos según diferentes modalidades de contratación.
+          </p>
+        </div>
+
+        {/* filtros */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          {/* Departamento */}
+          <div className="relative">
+            <label className="block text-sm text-gray-400 mb-2">Filtrar por Departamento</label>
+            <div className="relative">
+              <select
+                value={departamentoSeleccionado}
+                onChange={(e) => setDepartamentoSeleccionado(e.target.value)}
+                className="w-full px-4 py-2 bg-gray-800 text-white border border-gray-700 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#00B2FF]"
+                disabled={cargando || !!error}
+              >
+                <option value="Todos">Todos</option>
+                {departamentosFiltro.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+            </div>
+          </div>
+
+          {/* Grupo */}
+          <div className="relative">
+            <label className="block text-sm text-gray-400 mb-2">Filtrar por Grupo</label>
+            <div className="relative">
+              <select
+                value={grupoSeleccionado}
+                onChange={(e) => setGrupoSeleccionado(e.target.value)}
+                className="w-full px-4 py-2 bg-gray-800 text-white border border-gray-700 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#00B2FF]"
+                disabled={cargando || !!error}
+              >
+                <option value="Todos">Todos</option>
+                {gruposFiltro.map((g) => (
+                  <option key={g} value={g}>
+                    {g}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+            </div>
+          </div>
+
+          {/* Combinados */}
+          <div className="relative">
+            <label className="block text-sm text-gray-400 mb-2">Buscador de Servicios Combinados</label>
+            <div className="relative">
+              <select
+                value={filtroCombinado}
+                onChange={(e) => {
+                  if (e.target.value) filtrarCatalogoPorCombinado(e.target.value)
+                  else {
+                    setCodigosCombinadosSeleccionados([])
+                    setFiltroCombinado("")
+                  }
+                }}
+                className="w-full px-4 py-2 bg-gray-800 text-white border border-gray-700 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#00B2FF]"
+              >
+                <option value="">-- Seleccione un Servicio Combinado --</option>
+                {Object.keys(mapCombinados).map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+            </div>
+          </div>
+
+          {/* Buscador texto */}
+          <div className="relative">
+            <label className="block text-sm text-gray-400 mb-2">Buscador de Servicios</label>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Buscar por nombre o descripción..."
+                value={busqueda}
+                onChange={(e) => {
+                  setBusqueda(e.target.value)
+                  setFiltroCombinado("")
+                  setCodigosCombinadosSeleccionados([])
+                }}
+                className="w-full px-4 py-2 pl-10 bg-gray-800 text-white border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00B2FF]"
+                disabled={cargando || !!error}
+              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+            </div>
+          </div>
+        </div>
+
+        {/* Indicadores */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="bg-gray-800 p-3 rounded-lg flex justify-between items-center">
+            <span className="text-sm text-gray-400">Servicios Seleccionados</span>
+            <span className="text-lg font-semibold text-[#00B2FF]">{selectedServiceIds.length}</span>
+          </div>
+          <div className="bg-gray-800 p-3 rounded-lg flex justify-between items-center">
+            <span className="text-sm text-gray-400">Servicios Disponibles</span>
+            <span className="text-lg font-semibold text-white">{servicios.length}</span>
+          </div>
+        </div>
+
+        {/* Layout principal */}
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* ---------------- CATÁLOGO (izquierda) ------------- */}
+          <div>
+            <div className="bg-gray-800 rounded-lg p-2 text-center">
+              <h3 className="text-lg font-semibold text-[#e0b400]">Catálogo de Servicios</h3>
+            </div>
+
+            <div className="bg-gray-800 rounded-lg mt-1 p-4 h-96 overflow-y-auto">
+              {cargando ? (
+                <div className="flex flex-col items-center justify-center h-64">
+                  <div className="w-12 h-12 border-4 border-[#00B2FF] border-t-transparent rounded-full animate-spin" />
+                  <p className="mt-4 text-gray-400">Cargando servicios...</p>
+                </div>
+              ) : error ? (
+                <div className="flex flex-col items-center justify-center h-64 text-red-500">
+                  <p className="mb-2 text-center">{error}</p>
+                  <button onClick={cargarDatos} className="px-4 py-2 bg-[#00B2FF] text-white rounded-lg">
+                    Reintentar
+                  </button>
+                </div>
+              ) : servicios.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+                  <Filter className="h-12 w-12 mb-2 opacity-50" />
+                  <p>No se encontraron servicios con los filtros actuales</p>
+                  <button onClick={limpiarSeleccion} className="mt-2 text-[#00B2FF] hover:underline">
+                    Limpiar filtros
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {servicios.map((s) => (
+                    <div
+                      key={s.id}
+                      className={`p-3 rounded-lg cursor-pointer transition-all ${
