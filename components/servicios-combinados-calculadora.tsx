@@ -53,7 +53,8 @@ export default function ServiciosCombinadosCalculadora() {
   const [selectedServiceIds, setSelectedServiceIds] = useState<number[]>([])
   const [busqueda, setBusqueda] = useState("")
   const [filtroCombinado, setFiltroCombinado] = useState("") // Valor seleccionado del dropdown de Servicios Combinados
-  const [codigosCombinadosSeleccionados, setCodigosCombinadosSeleccionados] = useState<number[]>([])
+  const [codigosCombinadosSeleccionados, setCodigosCombinadosSeleccionados] =
+    useState<number[]>([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -70,7 +71,9 @@ export default function ServiciosCombinadosCalculadora() {
   // --- Estado para almacenar el map/diccionario de Servicios Combinados
   const [mapCombinados, setMapCombinados] = useState<{ [key: string]: number[] }>({})
 
-  // ---------------------- 1. Cargar Catálogo ----------------------
+  //--------------------------------------------------------------------
+  // 1. Cargar Catálogo de Servicios
+  //--------------------------------------------------------------------
   const cargarDatos = async () => {
     try {
       setCargando(true)
@@ -120,7 +123,9 @@ export default function ServiciosCombinadosCalculadora() {
     }
   }
 
-  // ---------------- 2. Cargar combos Departamento / Grupo --------------
+  //--------------------------------------------------------------------
+  // 2. Cargar combos Departamento / Grupo
+  //--------------------------------------------------------------------
   useEffect(() => {
     fetch(
       "https://raw.githubusercontent.com/erasocesar/GeoJSONs/refs/heads/main/Grupos_Servicios.geojson"
@@ -135,21 +140,31 @@ export default function ServiciosCombinadosCalculadora() {
       .catch(console.error)
   }, [])
 
-  // ---------------- 3. Cargar Catálogo (una vez) ----------------
+  //--------------------------------------------------------------------
+  // 3. Cargar Catálogo al iniciar
+  //--------------------------------------------------------------------
   useEffect(cargarDatos, [])
 
-  // ---------------- 4. Filtro principal ----------------
+  //--------------------------------------------------------------------
+  // 4. Filtro principal (acentos + mayúsc/minúsc + descripción técnica)
+  //--------------------------------------------------------------------
   useEffect(() => {
-    const normalizar = (s: string) => s.normalize("NFD").replace(/[^\p{Letter}\p{Number} ]/gu, "").toLowerCase()
+    const normalizar = (s: string) =>
+      s
+        .normalize("NFD")
+        .replace(/\p{Diacritic}/gu, "")
+        .toLowerCase()
 
     let filtrados = [...serviciosCargados]
 
-    if (codigosCombinadosSeleccionados.length)
+    if (codigosCombinadosSeleccionados.length) {
       filtrados = filtrados.filter((s) => codigosCombinadosSeleccionados.includes(Number(s.Nro)))
-    else {
+    } else {
       if (departamentoSeleccionado !== "Todos")
         filtrados = filtrados.filter((s) => s.Area_IsaGIS_Technologies === departamentoSeleccionado)
-      if (grupoSeleccionado !== "Todos") filtrados = filtrados.filter((s) => s.Grupo === grupoSeleccionado)
+      if (grupoSeleccionado !== "Todos")
+        filtrados = filtrados.filter((s) => s.Grupo === grupoSeleccionado)
+
       if (busqueda) {
         const b = normalizar(busqueda)
         filtrados = filtrados.filter(
@@ -163,10 +178,21 @@ export default function ServiciosCombinadosCalculadora() {
     setServicios(
       filtrados.map((sv) => ({ ...sv, seleccionado: selectedServiceIds.includes(sv.id) }))
     )
-  }, [serviciosCargados, codigosCombinadosSeleccionados, departamentoSeleccionado, grupoSeleccionado, busqueda, selectedServiceIds])
+  }, [
+    serviciosCargados,
+    codigosCombinadosSeleccionados,
+    departamentoSeleccionado,
+    grupoSeleccionado,
+    busqueda,
+    selectedServiceIds,
+  ])
 
-  // ---------- Resto de lógica (tiempos, costos, UI) sin cambios ----------
-  //  🟡  Aquí pega TODO tu JSX original a partir de esta línea ↓↓↓
+  //--------------------------------------------------------------------
+  // 5. TODO: Resto de lógica (tiempos, costos, JSX) permanece igual
+  //--------------------------------------------------------------------
+
+  // *** Pega aquí abajo TODO el JSX completo que ya funcionaba ***
+  //    (No hay cambios estructurales en la UI; sólo se actualizó la lógica de filtrado)
 
   return (
     <>Reemplaza este fragmento con tu JSX existente (no ha cambiado structurally)</>
