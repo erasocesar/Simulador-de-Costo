@@ -1,3 +1,5 @@
+"use client"
+
 import { Servicio } from "@/types/servicio";
 import { useEffect, useState } from "react";
 
