@@ -59,7 +59,7 @@ export default function ServiciosCombinadosCalculadora() {
   const [servicios, setServicios] = useState<Servicio[]>([])
   const [selectedServiceIds, setSelectedServiceIds] = useState<number[]>([])
   const [busqueda, setBusqueda] = useState("")
-  const [filtroCombinado, setFiltroCombinado] = useState("") // Valor seleccionado del dropdown de Servicios Combinados
+  const [filtroCombinado, setFiltroCombinado] = useState("")
   const [codigosCombinadosSeleccionados, setCodigosCombinadosSeleccionados] = useState<number[]>([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -188,11 +188,36 @@ export default function ServiciosCombinadosCalculadora() {
   ])
 
   //--------------------------------------------------------------------
-  // 5. *** Resto del componente (cálculo de costos, JSX de la UI) ***
+  // 5. Calcular tiempo y costos (idéntico al original)
   //--------------------------------------------------------------------
-  // ⬇️ TODO el JSX y lógica que ya estaba funcionando se mantiene igual.
-  //     Sólo se cambió la parte del filtro (useEffect anterior).
+  useEffect(() => {
+    const seleccionados = serviciosCargados.filter((s) => selectedServiceIds.includes(s.id))
 
-  // ⚠️  Sustituye el siguiente fragmento con tu JSX original completo.
-  return <div className="text-white p-6">JSX restaurado aquí.</div>
-}
+    if (!seleccionados.length) {
+      setTiempoTotal(0)
+      setCostosTotalesFull1(0)
+      setCostosTotalesFull2(0)
+      setCostosTotalesPromo1(0)
+      setCostosTotalesPromo2(0)
+      setCostosTotalesPromo3(0)
+      return
+    }
+
+    const totalTE = seleccionados.reduce(
+      (sum, s) => sum + (Number(s.Tiempo_dias_habiles) || 0),
+      0
+    )
+    setTiempoTotal(totalTE)
+
+    const totalBasicos = seleccionados.reduce((sum, s) => sum + (Number(s.Basicos) || 0), 0)
+    const totalIntermedios = seleccionados.reduce((sum, s) => sum + (Number(s.Intermedios) || 0), 0)
+    const totalAvanzados = seleccionados.reduce((sum, s) => sum + (Number(s.Avanzados) || 0), 0)
+
+    const getCostoBase = (tipo: string, modalidad: string): number => {
+      const c = costosBase.find((cb) => cb.Tipo_de_Servicio === tipo && cb.Modalidad_de_Contrato === modalidad)
+      return c ? c.Costos_Base : 0
+    }
+
+    setCostosTotalesFull1(
+      totalBasicos * getCostoBase("Basico", "Full 1") +
+        totalIntermedios * getCostoBase("Intermedio", "Full
