@@ -192,48 +192,45 @@ useEffect(() => {
   // 4. Cargar combos (Departamento, Grupo) desde un GeoJSON
   //
   useEffect(() => {
-    fetch("https://raw.githubusercontent.com/erasocesar/GeoJSONs/refs/heads/main/Grupos_Servicios.geojson")
-      .then((res) => res.json())
-      .then((data) => {
-        const depOptions = Array.from(
-          new Set(data.features.map((f: any) => f.properties.Area_Estrategica))
-        )
-        setDepartamentosFiltro(depOptions)
+  fetch("https://raw.githubusercontent.com/erasocesar/GeoJSONs/refs/heads/main/Grupos_Areas.geojson")
+    .then((res) => res.json())
+    .then((data) => {
+      const departamentos = Array.from(
+        new Set(data.features.map((f: any) => f.properties.Area_IsaGIS_Technologies))
+      ).filter(Boolean)
+      setDepartamentosFiltro(departamentos)
 
-        const grpOptions = Array.from(
-          new Set(data.features.map((f: any) => f.properties.Grupo))
-        )
-        setGruposFiltro(grpOptions)
-      })
-      .catch((err) => console.error("Error al cargar combos (GeoJSON):", err))
-  }, [])
+      const grupos = data.features.map((f: any) => f.properties.Grupo).filter(Boolean)
+      setGruposFiltro(grupos)
+    })
+    .catch((err) => console.error("Error al cargar combos (GeoJSON):", err))
+}, [])
+
 
   // Actualizar combos de Grupo al cambiar Departamento
   useEffect(() => {
-    fetch("https://raw.githubusercontent.com/erasocesar/GeoJSONs/refs/heads/main/Grupos_Servicios.geojson")
-      .then((res) => res.json())
-      .then((data) => {
-        if (departamentoSeleccionado === "Todos") {
-          const grpOptions = Array.from(
-            new Set(data.features.map((f: any) => f.properties.Grupo))
-          )
-          setGruposFiltro(grpOptions)
-        } else {
-          const filtered = data.features.filter(
-            (f: any) => f.properties.Area_Estrategica === departamentoSeleccionado
-          )
-          const grpOptions = Array.from(
-            new Set(filtered.map((f: any) => f.properties.Grupo))
-          )
-          setGruposFiltro(grpOptions)
+  fetch("https://raw.githubusercontent.com/erasocesar/GeoJSONs/refs/heads/main/Grupos_Areas.geojson")
+    .then((res) => res.json())
+    .then((data) => {
+      let grupos: string[]
 
-          if (!grpOptions.includes(grupoSeleccionado)) {
-            setGrupoSeleccionado("Todos")
-          }
-        }
-      })
-      .catch((err) => console.error("Error actualizando combos de Grupo:", err))
-  }, [departamentoSeleccionado, grupoSeleccionado])
+      if (departamentoSeleccionado === "Todos") {
+        grupos = data.features.map((f: any) => f.properties.Grupo).filter(Boolean)
+      } else {
+        const filtrados = data.features.filter(
+          (f: any) => f.properties.Area_IsaGIS_Technologies === departamentoSeleccionado
+        )
+        grupos = filtrados.map((f: any) => f.properties.Grupo).filter(Boolean)
+      }
+
+      setGruposFiltro(grupos)
+
+      if (!grupos.includes(grupoSeleccionado)) {
+        setGrupoSeleccionado("Todos")
+      }
+    })
+    .catch((err) => console.error("Error actualizando combos de Grupo:", err))
+}, [departamentoSeleccionado, grupoSeleccionado])
 
   //
   // 5. Filtros del Catálogo
